@@ -19,7 +19,7 @@
     o = o || {};
     o.reporter = o.reporter || 'bdd';
     o.context = o.context || {};
-    o.file = o.file || '/tmp/mocha' + time;
+    o.file = o.file || 'test/mocha' + time;
     logtext = "";
     log = function(obj) {
       if (obj) {

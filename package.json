@@ -1,6 +1,7 @@
 {
   "name":"gqmocha",
   "main":"index.js",
+  "private":false,
   "license":"MIT",
   "dependencies":{
     "lodash":"1.3.0",

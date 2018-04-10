@@ -9,7 +9,7 @@ exports.test=(o,cb)->
   o=o||{}
   o.reporter=o.reporter||'bdd'
   o.context=o.context||{}
-  o.file=o.file||'/tmp/mocha'+time
+  o.file=o.file||'test/mocha'+time
 
   logtext=""
 
@@ -44,7 +44,7 @@ exports.test=(o,cb)->
   pseudoFile mocha,context,o.test
 
   access = fs.createWriteStream(o.file);
-
+  # todo: find alternative way than monkey patching
   stdouttemp=process.stdout.write
   stderrtemp=process.stderr.write
   process.stdout.write = process.stderr.write = access.write.bind(access);
