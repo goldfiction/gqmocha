@@ -2,39 +2,120 @@ vm = require "vm"
 Mocha = require "mocha"
 _ = require "lodash"
 assert=require 'assert'
-fs=require 'fs'
 time=Date.now()
 
 exports.test=(o,cb)->
   o=o||{}
-  o.reporter=o.reporter||'bdd'
+  o.ui=o.ui||'bdd'
+  o.reporter=o.reporter||'tap'
   o.context=o.context||{}
-  o.file=o.file||'test/mocha'+time
+  #o.file=o.file||'/tmp/mocha'+time
+  o.filter=o.filter||[]
+  o.filter.push(new RegExp(__dirname+"/","ig"))
 
-  logtext=""
+  process.on 'uncaughtException',(err)->
+    if(err&&err.stack)
+      console.log(err.stack)
+    else
+      console.log(err)
+
+
+  Log=""
 
   log=(obj)->
     if(obj)
       if typeof obj=="string"
-        logtext+=obj
+        Log+='\n'+obj
       else if typeof obj=="object"
-        logtext+=JSON.stringify(obj,null,2)
+        Log+='\n'+JSON.stringify(obj,null,2)
       else
-        logtext+=obj+''
-
-  getLog=()->
-    return logtext
+        Log+='\n'+obj+''
 
   context=
-    assert:assert
-    it:@it
-    log:log
-    console:console
+    'assert':assert
+    'it':@it
+    'log':log
 
-  #o.context=_.extend context,o.context
+  filter=(hay)->
+    for v in o.filter
+      hay=hay.replace(v,"")
+    hay
 
-  mocha = new Mocha
-    ui:o.reporter
+  JSONReporter = (runner) ->
+    self = this
+    #mocha.reporters.Base.call this, runner
+    tests = []
+    pending = []
+    failures = []
+    passes = []
+    runner.on 'test end', (test) ->
+      tests.push test
+      return
+    runner.on 'pass', (test) ->
+      passes.push test
+    runner.on 'fail', (test,err) ->
+      test.err=err
+      failures.push test
+    runner.on 'pending', (test) ->
+      pending.push test
+    runner.on 'end', ->
+      obj =
+        stats: self.stats
+        tests: tests.map(clean)
+        pending: pending.map(clean)
+        failures: failures.map(clean)
+        passes: passes.map(clean)
+        stats:passes.length+' out of '+(passes.length + failures.length)+' cases passed'
+      runner.testResults = obj
+      o.output=filter(JSON.stringify(obj, null, 2))
+      o.reporter='json'
+
+  TAPReporter=(runner)->
+    #mocha.reporters.Base.call(this, runner)
+
+    self = this
+    stats = this.stats
+    n = 1
+    passes = 0
+    failures = 0;
+
+    runner.on 'start', ->
+      total = runner.grepTotal(runner.suite)
+      log 1+'..'+total
+    runner.on 'test end', ->
+      ++n
+    runner.on 'pending', (test) ->
+      log 'ok '+n+' '+title(test)+' # SKIP -'
+    runner.on 'pass', (test) ->
+      passes++
+      log 'ok '+n+' '+title(test)
+    runner.on 'fail', (test, err) ->
+      failures++
+      log 'not ok '+n+' '+title(test)
+      if err.stack
+        log err.stack.replace(/^/gm, '  ')
+    runner.on 'end', ->
+      log ''
+      log '# tests ' + (passes + failures)
+      log '# pass ' + passes
+      log '# fail ' + failures
+
+      o.reporter='tap'
+      o.output=filter(Log)
+
+  if o.reporter=='json'
+    mocha = new Mocha({ui:o.ui,reporter:JSONReporter})
+  else
+    mocha = new Mocha({ui:o.ui,reporter:TAPReporter})
+
+  title=(test)->
+    test.fullTitle().replace(/#/g, '')
+
+  clean=(test)->
+    title: test.title,
+    fullTitle: test.fullTitle(),
+    duration: test.duration,
+    err: JSON.stringify(test.err || {},null,2)
 
   pseudoFile=(mocha, context, fileContent)->
     mocha.suite.emit "pre-require", context, ":memory:", mocha
@@ -43,17 +124,12 @@ exports.test=(o,cb)->
 
   pseudoFile mocha,context,o.test
 
-  access = fs.createWriteStream(o.file);
-  # todo: find alternative way than monkey patching
-  stdouttemp=process.stdout.write
-  stderrtemp=process.stderr.write
-  process.stdout.write = process.stderr.write = access.write.bind(access);
-
-  o.getLog=getLog
-  o.mocha=o.mocha
-  o.run=mocha.run
-
   mocha.run ()->
-    process.stdout.write=stdouttemp
-    process.stderr.write=stderrtemp
-    cb null,o
+    setTimeout ()->
+      delete o.filter
+      delete o.context
+      cb(null,o)
+    ,5
+
+
+
