@@ -37,6 +37,7 @@
       'it': this.it,
       'log': log
     };
+    context = _.extend(o.context, context);
     filter = function(hay) {
       var v, _i, _len, _ref;
       _ref = o.filter;

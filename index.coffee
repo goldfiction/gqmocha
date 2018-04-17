@@ -28,6 +28,7 @@ exports.test=(o,cb)->
     'assert':assert
     'it':@it
     'log':log
+  context=_.extend o.context,context
 
   filter=(hay)->
     for v in o.filter
