@@ -11,7 +11,6 @@ exports.test=(o,cb)->
   o.context=o.context||{}
   #o.file=o.file||'/tmp/mocha'+time
   o.filter=o.filter||[]
-  o.filter.push(new RegExp(__dirname+"/","ig"))
 
   Log=""
 
@@ -32,7 +31,7 @@ exports.test=(o,cb)->
 
   filter=(hay)->
     for v in o.filter
-      hay=hay.replace(v,"")
+      hay=replaceAll(v,"",hay)
     hay
 
   process.on 'uncaughtException',(err)->
@@ -131,5 +130,8 @@ exports.test=(o,cb)->
       cb(null,o)
     ,5
 
+replaceAll = (find, replace, str)->
+  find = find.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+  str.replace(new RegExp(find, 'g'), replace)
 
 
