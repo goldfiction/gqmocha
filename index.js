@@ -20,15 +20,8 @@
     o.context = o.context || {};
     o.filter = o.filter || [];
     o.filter.push(new RegExp(__dirname + "/", "ig"));
-    process.on('uncaughtException', function(err) {
-      if (err && err.stack) {
-        return console.log(err.stack);
-      } else {
-        return console.log(err);
-      }
-    });
     Log = "";
-    log = function(obj) {
+    log = o.log || function(obj) {
       if (obj) {
         if (typeof obj === "string") {
           return Log += '\n' + obj;
@@ -53,6 +46,13 @@
       }
       return hay;
     };
+    process.on('uncaughtException', function(err) {
+      if (err && err.stack) {
+        return log(err.stack);
+      } else {
+        return log(err);
+      }
+    });
     JSONReporter = function(runner) {
       var failures, passes, pending, self, tests;
       self = this;

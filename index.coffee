@@ -13,16 +13,9 @@ exports.test=(o,cb)->
   o.filter=o.filter||[]
   o.filter.push(new RegExp(__dirname+"/","ig"))
 
-  process.on 'uncaughtException',(err)->
-    if(err&&err.stack)
-      console.log(err.stack)
-    else
-      console.log(err)
-
-
   Log=""
 
-  log=(obj)->
+  log=o.log||(obj)->
     if(obj)
       if typeof obj=="string"
         Log+='\n'+obj
@@ -40,6 +33,12 @@ exports.test=(o,cb)->
     for v in o.filter
       hay=hay.replace(v,"")
     hay
+
+  process.on 'uncaughtException',(err)->
+    if(err&&err.stack)
+      log(err.stack)
+    else
+      log(err)
 
   JSONReporter = (runner) ->
     self = this
