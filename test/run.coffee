@@ -1,16 +1,7 @@
 test=require '../index.js'
+fs=require 'fs'
 
-testText="
-it('should be able to run a case',function(done){
-  assert(true);
-  done();
-});
-
-it('should be able to fail a case',function(done){
-  assert(false);
-  done();
-});
-"
+testText=fs.readFileSync 'test/test.txt'
 
 test.test
   test:testText  # pass in your test in string format
